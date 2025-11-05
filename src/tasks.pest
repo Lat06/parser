@@ -1,0 +1,11 @@
+status = { "x" | " " }
+
+description = @{ (!NEWLINE ~ ANY)* }
+
+task_line = {
+    "-" ~ " " ~ "[" ~ status ~ "]" ~ " " ~ description ~ (NEWLINE | EOI)
+}
+
+file = {
+    SOI ~ (task_line | NEWLINE)* ~ EOI
+}
