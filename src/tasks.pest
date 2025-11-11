@@ -1,9 +1,15 @@
-status = { "x" | " " }
+status         =  { "x" | " " }
+priority       =  { "(" ~ priority_inner ~ ")" }
+priority_inner = @{ "low" | "medium" | "high" }
+tag_inner      = @{ (!" " ~ !NEWLINE ~ ANY)+ }
+tag            =  { "#" ~ tag_inner }
 
-description = @{ (!NEWLINE ~ ANY)* }
+description_text = @{
+    (!(NEWLINE) ~ !(" " ~ "(") ~ !(" " ~ "#") ~ ANY)+
+}
 
 task_line = {
-    "-" ~ " " ~ "[" ~ status ~ "]" ~ " " ~ description ~ (NEWLINE | EOI)
+    "-" ~ " " ~ "[" ~ status ~ "]" ~ " " ~ description_text ~ (" " ~ priority)? ~ (" " ~ tag)* ~ (NEWLINE | EOI)
 }
 
 file = {

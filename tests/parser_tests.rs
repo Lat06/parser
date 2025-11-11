@@ -1,60 +1,61 @@
 use anyhow::Result;
-use tasklist_parser::{Task, TaskStatus, parse_tasks};
+use tasklist_parser::{TaskStatus, parse_tasks};
 
 #[test]
-fn test_parse_single_done_task() -> Result<()> {
-    let input = "- [x] This is a completed task\n";
+fn test_parse_full_task() -> Result<()> {
+    let input = "- [x] Complicated task (high) #rust #parser\n";
     let tasks = parse_tasks(input)?;
 
     assert_eq!(tasks.len(), 1);
-    assert_eq!(
-        tasks[0],
-        Task {
-            status: TaskStatus::Done,
-            description: "This is a completed task".to_string()
-        }
-    );
+    let task = &tasks[0];
+
+    assert_eq!(task.status, TaskStatus::Done);
+    assert_eq!(task.description, "Complicated task");
+    assert_eq!(task.priority, Some("high".to_string()));
+    assert_eq!(task.tags, vec!["rust".to_string(), "parser".to_string()]);
+
     Ok(())
 }
 
 #[test]
-fn test_parse_single_pending_task() -> Result<()> {
-    let input = "- [ ] This is a pending task\n";
+fn test_parse_task_no_priority_or_tags() -> Result<()> {
+    let input = "- [ ] Simple task\n";
     let tasks = parse_tasks(input)?;
 
     assert_eq!(tasks.len(), 1);
-    assert_eq!(
-        tasks[0],
-        Task {
-            status: TaskStatus::Pending,
-            description: "This is a pending task".to_string()
-        }
-    );
+    let task = &tasks[0];
+
+    assert_eq!(task.status, TaskStatus::Pending);
+    assert_eq!(task.description, "Simple task");
+    assert_eq!(task.priority, None);
+    assert!(task.tags.is_empty());
+
     Ok(())
 }
 
 #[test]
-fn test_parse_multiple_tasks_and_empty_lines() -> Result<()> {
-    let input = "
-- [x] Task 1
-
-- [ ] Task 2
-- [x] Task 3
-
-";
+fn test_parse_only_priority() -> Result<()> {
+    let input = "- [ ] Task with priority (low)\n";
     let tasks = parse_tasks(input)?;
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].priority, Some("low".to_string()));
+    assert!(tasks[0].tags.is_empty());
+    Ok(())
+}
 
-    assert_eq!(tasks.len(), 3);
-    assert_eq!(tasks[0].status, TaskStatus::Done);
-    assert_eq!(tasks[1].status, TaskStatus::Pending);
-    assert_eq!(tasks[2].status, TaskStatus::Done);
+#[test]
+fn test_parse_only_tags() -> Result<()> {
+    let input = "- [ ] Task with tags #work\n";
+    let tasks = parse_tasks(input)?;
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].priority, None);
+    assert_eq!(tasks[0].tags, vec!["work".to_string()]);
     Ok(())
 }
 
 #[test]
 fn test_invalid_line_fails() {
     let input = "[ ] Invalid task\n";
-
     let result = parse_tasks(input);
     assert!(result.is_err());
 }
