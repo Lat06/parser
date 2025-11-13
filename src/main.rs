@@ -23,31 +23,56 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-
     match &cli.command {
+        Commands::Credits => {
+            println!("Tasklist Parser");
+            println!("Made for Rust course.");
+            println!("Source code available on GitHub.");
+        }
         Commands::Parse { file } => {
             let content = std::fs::read_to_string(file)
                 .with_context(|| format!("Could not read file `{:?}`", file))?;
 
             let tasks = parse_tasks(&content)?;
 
+            println!("--- Task Breakdown ---");
+            for (index, task) in tasks.iter().enumerate() {
+                let status_char = if task.status == TaskStatus::Done {
+                    'x'
+                } else {
+                    ' '
+                };
+                let priority_info = task
+                    .priority
+                    .as_ref()
+                    .map(|p| format!(" ({})", p))
+                    .unwrap_or_default();
+                let tags_info = if task.tags.is_empty() {
+                    String::new()
+                } else {
+                    format!(" #{}", task.tags.join(" #"))
+                };
+
+                println!(
+                    "Task {}: [{}]{} {}{}",
+                    index + 1,
+                    status_char,
+                    priority_info,
+                    task.description,
+                    tags_info
+                );
+            }
+
             let total = tasks.len();
             let done = tasks
                 .iter()
                 .filter(|t| t.status == TaskStatus::Done)
                 .count();
-            let pending = total - done;
 
-            println!("--- Task Summary ---");
+            println!("\n--- Task Summary ---");
             println!("Total:   {}", total);
             println!("Done:    {}", done);
-            println!("Pending: {}", pending);
-        }
-
-        Commands::Credits => {
-            println!("Tasklist Parser");
-            println!("Made by [Ваше Ім'я тут]");
-            println!("A simple parser for a Rust course.");
+            println!("Pending: {}", total - done);
         }
     }
 
